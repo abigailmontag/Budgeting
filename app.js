@@ -309,7 +309,13 @@ function updateCategoryDropdowns() {
 
 // ── CLOSE MONTH ───────────────────────────────────────────────────────────────
 
-document.getElementById('closeMonthBtn').addEventListener('click', openCloseMonthModal);
+document.getElementById('closeMonthBtn').addEventListener('click', () => {
+  // Remind user to back up before closing the month
+  if (!confirm('Before closing the month, it's a good idea to download a backup.\n\nPress OK to continue to Close Month, or Cancel to back up first.')) {
+    return;
+  }
+  openCloseMonthModal();
+});
 
 function openCloseMonthModal() {
   const list = document.getElementById('rolloverList');
@@ -524,6 +530,76 @@ function exportCSV() {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+
+
+// ── JSON BACKUP & RESTORE ─────────────────────────────────────────────────────
+
+document.getElementById('backupBtn').addEventListener('click', downloadBackup);
+document.getElementById('restoreBtn').addEventListener('click', () => {
+  document.getElementById('restoreFileInput').click();
+});
+document.getElementById('restoreFileInput').addEventListener('change', handleRestoreFile);
+
+function downloadBackup() {
+  const backup = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    data: data
+  };
+  const json = JSON.stringify(backup, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href     = url;
+  link.download = `budget-backup-${data.lastMonth}.json`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+
+  showRestoreStatus('Backup downloaded!', 'success');
+}
+
+function handleRestoreFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    try {
+      const backup = JSON.parse(event.target.result);
+
+      // Validate it looks like our backup format
+      if (!backup.data || !backup.data.transactions || !backup.data.incomes || !backup.data.categoryGoals) {
+        return showRestoreStatus('Invalid backup file — please use a file exported from this app.', 'error');
+      }
+
+      if (!confirm(`Restore backup from ${backup.exportedAt ? new Date(backup.exportedAt).toLocaleDateString() : 'unknown date'}? This will replace all current data.`)) {
+        // Reset file input so same file can be chosen again
+        e.target.value = '';
+        return;
+      }
+
+      data = backup.data;
+      saveData();
+      update();
+      showRestoreStatus('Backup restored successfully!', 'success');
+    } catch (err) {
+      showRestoreStatus('Could not read file — make sure it's a valid backup.', 'error');
+    }
+    // Reset so same file can be re-selected if needed
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function showRestoreStatus(msg, type) {
+  const el = document.getElementById('restoreStatus');
+  el.textContent = msg;
+  el.className = 'restore-status restore-status--' + type;
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 4000);
 }
 
 // ── UTILITIES ─────────────────────────────────────────────────────────────────

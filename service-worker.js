@@ -1,14 +1,13 @@
-const CACHE_NAME = 'budget-cache-v3';
+const CACHE_NAME = 'budget-cache-v4';
 
-// Use relative paths — these resolve correctly whether the app is at
-// yourusername.github.io/repo-name/ or a custom domain root
+// Absolute paths required for GitHub Pages subdirectory /Budgeting/
 const urlsToCache = [
-  './',
-  './index.html',
-  './app.js',
-  './styles.css',
-  './manifest.json',
-  './icon-512.png'
+  '/Budgeting/',
+  '/Budgeting/index.html',
+  '/Budgeting/app.js',
+  '/Budgeting/styles.css',
+  '/Budgeting/manifest.json',
+  '/Budgeting/icon-512.png'
 ];
 
 // Install: cache all core files
@@ -37,7 +36,7 @@ self.addEventListener('activate', event => {
 //        cache-first for everything else (icons, etc.)
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
-  const isCodeFile = /\.(js|css|html)$/.test(url.pathname) || url.pathname === '/';
+  const isCodeFile = /\.(js|css|html)$/.test(url.pathname) || url.pathname === '/Budgeting/';
 
   if (isCodeFile) {
     // Network-first: try to fetch fresh, fall back to cache when offline
