@@ -324,52 +324,68 @@ function openCloseMonthModal() {
     if (leftover <= 0) return;
 
     hasLeftovers = true;
+
+    // Build "move to specific category" options (all cats except this one)
+    const otherCats = cats.filter(c => c !== cat);
+    const moveToOptions = otherCats
+      .map(c => `<option value="moveto:${c}">↗️ Move to: ${c}</option>`)
+      .join('');
+
     const div = document.createElement('div');
     div.className = 'rollover-item';
     div.innerHTML = `
-      <label>${cat}: <strong>$${leftover.toFixed(2)}</strong> leftover</label>
-      <select data-cat="${cat}">
-        <option value="carry">Carry forward to same category</option>
-        <option value="redistribute">Redistribute evenly to other categories</option>
-        <option value="none">Discard (don't carry forward)</option>
+      <div class="rollover-cat-name">${cat}</div>
+      <div class="rollover-amount">$${leftover.toFixed(2)} leftover</div>
+      <select class="rollover-action" data-cat="${cat}">
+        <option value="carry">↩️ Carry forward to ${cat}</option>
+        <option value="income">💵 Add to next month's income</option>
+        ${moveToOptions}
+        <option value="none">🗑️ Discard</option>
       </select>
     `;
     list.appendChild(div);
   });
 
   if (!hasLeftovers) {
-    list.innerHTML = '<p style="opacity:0.7;font-size:0.85rem">No leftover budgets — all categories are spent or over budget.</p>';
+    list.innerHTML = '<p class="rollover-empty">No leftover budgets — all categories are fully spent.</p>';
   }
 
   document.getElementById('closeMonthModal').style.display = 'flex';
 }
 
 document.getElementById('confirmCloseMonth').addEventListener('click', () => {
-  const selects = document.querySelectorAll('#rolloverList select');
+  const actionSelects = document.querySelectorAll('#rolloverList .rollover-action');
 
-  // Snapshot original goals before mutation to prevent compounding
+  // Snapshot original goals before any mutation to prevent carry-forward compounding
   const originalGoals = { ...data.categoryGoals };
 
-  selects.forEach(sel => {
-    const cat     = sel.dataset.cat;
-    const choice  = sel.value;
-    const spent   = calcSpent(cat);
+  // Pool all income rollovers into a single entry
+  let incomeRollover = 0;
+  const today = new Date().toISOString().slice(0, 10);
+
+  actionSelects.forEach(sel => {
+    const cat      = sel.dataset.cat;
+    const choice   = sel.value;
+    const spent    = calcSpent(cat);
     const leftover = originalGoals[cat] - spent;
     if (leftover <= 0) return;
 
     if (choice === 'carry') {
       data.categoryGoals[cat] += leftover;
-    } else if (choice === 'redistribute') {
-      const others = Object.keys(data.categoryGoals).filter(c => c !== cat);
-      if (others.length > 0) {
-        const share = leftover / others.length;
-        others.forEach(c => { data.categoryGoals[c] += share; });
+
+    } else if (choice === 'income') {
+      incomeRollover += leftover;
+
+    } else if (choice.startsWith('moveto:')) {
+      const targetCat = choice.replace('moveto:', '');
+      if (data.categoryGoals[targetCat] !== undefined) {
+        data.categoryGoals[targetCat] += leftover;
       }
     }
-    // 'none' — do nothing
+    // 'none' — discard, do nothing
   });
 
-  // Archive this month's data (transactions AND incomes)
+  // Archive this month before resetting
   const archiveMonth = data.lastMonth;
   data.history[archiveMonth] = {
     transactions: [...data.transactions],
@@ -380,6 +396,15 @@ document.getElementById('confirmCloseMonth').addEventListener('click', () => {
   data.transactions = [];
   data.incomes      = [];
   data.lastMonth    = currentMonth;
+
+  // Add income rollover as first entry of the new month, if any
+  if (incomeRollover > 0) {
+    data.incomes.push({
+      amount: parseFloat(incomeRollover.toFixed(2)),
+      note:   `Rollover from ${archiveMonth}`,
+      date:   today
+    });
+  }
 
   closeModal('closeMonthModal');
   update();

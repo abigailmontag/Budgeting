@@ -440,18 +440,38 @@ canvas {
 
 /* Rollover items */
 .rollover-item {
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.75rem;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.9rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.rollover-item label {
-  display: block;
-  font-size: 0.85rem;
-  margin-bottom: 0.3rem;
-  font-weight: 600;
+.rollover-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
 }
 
-.rollover-item select {
+.rollover-cat-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 0.1rem;
+}
+
+.rollover-amount {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #a5f3c0;
+  margin-bottom: 0.4rem;
+}
+
+.rollover-action {
   background: rgba(255, 255, 255, 0.12);
+  font-size: 15px;
+  font-family: 'Nunito', sans-serif;
+}
+
+.rollover-empty {
+  opacity: 0.7;
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 0.5rem 0;
 }
