@@ -444,6 +444,7 @@ function updateBalance() {
 let surplusChart;
 
 function renderCharts() {
+  if (typeof Chart === 'undefined') return; // Chart.js not loaded yet
   const ctx = document.getElementById('surplusChart').getContext('2d');
   const cats = Object.keys(data.categoryGoals);
 
