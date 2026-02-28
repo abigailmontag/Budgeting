@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#4f46e5">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-512.png">
@@ -16,7 +16,7 @@
 <body>
 
 <header>
-  <h1>Budget Tracker</h1>
+  <h1>💰 Budget Tracker</h1>
   <div class="balance" id="balance">Balance: $0</div>
 </header>
 
@@ -30,16 +30,22 @@
   <button type="button" onclick="addIncome()">Add Income</button>
   <ul id="incomeList"></ul>
 
-  <!-- Categories Section -->
-  <h3>Categories</h3>
-  <div id="categoriesContainer"></div>
+  <!-- Manage Categories -->
+  <h3>Manage Categories</h3>
+  <input type="text" id="newCategory" placeholder="Category Name">
+  <input type="number" id="newGoal" placeholder="Monthly Goal">
+  <button type="button" onclick="addCategory()">Add / Update Category</button>
 
-  <!-- Transfers -->
+  <!-- Transfer Between Categories -->
   <h3>Transfer Between Categories</h3>
   <select id="transferFrom"></select>
   <select id="transferTo"></select>
   <input type="number" id="transferAmount" placeholder="Amount">
   <button id="transferBtn">Transfer</button>
+
+  <!-- Categories Section -->
+  <h3>Categories</h3>
+  <div id="categoriesContainer"></div>
 
   <!-- Charts -->
   <h3>Surplus / Available Budget</h3>
