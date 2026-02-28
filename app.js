@@ -311,7 +311,7 @@ function updateCategoryDropdowns() {
 
 document.getElementById('closeMonthBtn').addEventListener('click', () => {
   // Remind user to back up before closing the month
-  if (!confirm('Before closing the month, it's a good idea to download a backup.\n\nPress OK to continue to Close Month, or Cancel to back up first.')) {
+  if (!confirm("Before closing the month, it's a good idea to download a backup.\n\nPress OK to continue to Close Month, or Cancel to back up first.")) {
     return;
   }
   openCloseMonthModal();
@@ -587,7 +587,7 @@ function handleRestoreFile(e) {
       update();
       showRestoreStatus('Backup restored successfully!', 'success');
     } catch (err) {
-      showRestoreStatus('Could not read file — make sure it's a valid backup.', 'error');
+      showRestoreStatus("Could not read file — make sure it's a valid backup.", 'error');
     }
     // Reset so same file can be re-selected if needed
     e.target.value = '';

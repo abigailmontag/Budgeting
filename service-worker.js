@@ -1,4 +1,4 @@
-const CACHE_NAME = 'budget-cache-v4';
+const CACHE_NAME = 'budget-cache-v5';
 
 // Absolute paths required for GitHub Pages subdirectory /Budgeting/
 const urlsToCache = [
