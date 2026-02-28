@@ -1,3 +1,4 @@
+/* ----------------- GENERAL ----------------- */
 :root {
   --glass: rgba(255, 255, 255, 0.12);
   --text: #ffffff;
@@ -19,11 +20,6 @@ body {
   100% { background-position: 0% 50%; }
 }
 
-input, select, button {
-  font-size: 16px; /* prevent mobile zoom */
-  -webkit-text-size-adjust: 100%;
-}
-
 body.dark {
   background: linear-gradient(-45deg, #1e1b4b, #312e81, #4c1d95, #0f172a);
 }
@@ -34,9 +30,11 @@ body.dark {
   margin-bottom: 16px;
 }
 
+/* ----------------- CARDS ----------------- */
 .summary-card,
 .transfer-card,
-.category-card {
+.category-card,
+.income-card {
   background: var(--glass);
   backdrop-filter: blur(12px);
   padding: 16px;
@@ -50,10 +48,24 @@ body.dark {
   gap: 6px;
 }
 
+.income-card ul {
+  list-style: none;
+  padding-left: 0;
+  margin-top: 8px;
+}
+.income-card li {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+/* ----------------- INPUTS ----------------- */
 input, select, button {
   border-radius: 10px;
   padding: 8px;
   border: none;
+  font-size: 16px; /* prevents mobile zoom */
+  -webkit-text-size-adjust: 100%;
 }
 
 .primary-btn {
@@ -72,7 +84,7 @@ canvas {
   margin-bottom: 20px;
 }
 
-/* Bottom modal */
+/* ----------------- MODAL ----------------- */
 .modal {
   display: none;
   position: fixed;
