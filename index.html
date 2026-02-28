@@ -17,11 +17,17 @@
   <button id="themeToggle">🌙</button>
 </header>
 
+<!-- Income Transactions -->
+<section class="income-card">
+  <h3>Income</h3>
+  <input type="number" id="incomeAmount" placeholder="Amount" />
+  <input type="date" id="incomeDate" />
+  <input type="text" id="incomeNote" placeholder="Note (optional)" />
+  <button onclick="addIncome()">Add Income</button>
+  <ul id="incomeList"></ul>
+</section>
+
 <section class="summary-card">
-  <div>
-    <label>Income</label>
-    <input type="number" id="incomeInput" />
-  </div>
   <div>
     <label>Available</label>
     <span id="availableDisplay">$0</span>
