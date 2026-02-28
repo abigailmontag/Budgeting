@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-512.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Budget Tracker">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Budget Tracker</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <header>
+    <h1>💰 Budget Tracker</h1>
+    <div class="balance" id="balance">Balance: $0.00</div>
+  </header>
+
+  <main class="container">
+
+    <!-- ── Income ── -->
+    <section class="card" aria-labelledby="income-heading">
+      <h2 id="income-heading">Income</h2>
+
+      <div class="form-group">
+        <label for="incomeAmount">Amount ($)</label>
+        <input type="number" id="incomeAmount" placeholder="0.00" min="0.01" step="0.01" inputmode="decimal">
+      </div>
+      <div class="form-group">
+        <label for="incomeNote">Description</label>
+        <input type="text" id="incomeNote" placeholder="e.g. Paycheck">
+      </div>
+      <div class="form-group">
+        <label for="incomeDate">Date</label>
+        <input type="date" id="incomeDate">
+      </div>
+      <button type="button" id="addIncomeBtn">Add Income</button>
+
+      <ul id="incomeList" aria-label="Income entries"></ul>
+    </section>
+
+    <!-- ── Add Category ── -->
+    <section class="card" aria-labelledby="cat-heading">
+      <h2 id="cat-heading">Categories</h2>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="newCategory">Category Name</label>
+          <input type="text" id="newCategory" placeholder="e.g. Groceries">
+        </div>
+        <div class="form-group">
+          <label for="newGoal">Monthly Budget ($)</label>
+          <input type="number" id="newGoal" placeholder="0.00" min="0.01" step="0.01" inputmode="decimal">
+        </div>
+      </div>
+      <button type="button" id="addCategoryBtn">Add Category</button>
+
+      <div id="categoriesContainer" aria-label="Budget categories"></div>
+    </section>
+
+    <!-- ── Transfers ── -->
+    <section class="card" aria-labelledby="transfer-heading">
+      <h2 id="transfer-heading">Transfer Between Categories</h2>
+
+      <div class="form-group">
+        <label for="transferFrom">From</label>
+        <select id="transferFrom"></select>
+      </div>
+      <div class="form-group">
+        <label for="transferTo">To</label>
+        <select id="transferTo"></select>
+      </div>
+      <div class="form-group">
+        <label for="transferAmount">Amount ($)</label>
+        <input type="number" id="transferAmount" placeholder="0.00" min="0.01" step="0.01" inputmode="decimal">
+      </div>
+      <button type="button" id="transferBtn">Transfer</button>
+    </section>
+
+    <!-- ── Chart ── -->
+    <section class="card" aria-labelledby="chart-heading">
+      <h2 id="chart-heading">Surplus / Available Budget</h2>
+      <canvas id="surplusChart" height="180" role="img" aria-label="Budget surplus chart"></canvas>
+      <div class="available-display">Available: <span id="availableDisplay">$0.00</span></div>
+    </section>
+
+    <!-- ── Actions ── -->
+    <section class="card actions-row">
+      <button type="button" id="exportBtn">Export CSV</button>
+      <button type="button" id="closeMonthBtn" class="btn-secondary">Close Month</button>
+    </section>
+
+  </main>
+
+  <!-- ── Add Transaction Modal ── -->
+  <div id="addTransactionModal" class="modal" style="display:none;"
+       role="dialog" aria-modal="true" aria-labelledby="txModalTitle">
+    <div class="modal-content">
+      <h3 id="txModalTitle">Add Expense</h3>
+      <p id="txModalCatLabel" class="modal-cat-label"></p>
+
+      <div class="form-group">
+        <label for="txNote">Description</label>
+        <input type="text" id="txNote" placeholder="e.g. Weekly shop">
+      </div>
+      <div class="form-group">
+        <label for="txAmount">Amount ($)</label>
+        <input type="number" id="txAmount" placeholder="0.00" min="0.01" step="0.01" inputmode="decimal">
+      </div>
+      <div class="form-group">
+        <label for="txDate">Date</label>
+        <input type="date" id="txDate">
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="txConfirmBtn">Add Expense</button>
+        <button type="button" class="btn-secondary" onclick="closeModal('addTransactionModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Close Month Modal ── -->
+  <div id="closeMonthModal" class="modal" style="display:none;"
+       role="dialog" aria-modal="true" aria-labelledby="closeMonthTitle">
+    <div class="modal-content">
+      <h3 id="closeMonthTitle">Resolve Rollovers</h3>
+      <p class="modal-subtitle">Choose what to do with leftover budget in each category.</p>
+      <div id="rolloverList"></div>
+      <div class="modal-actions">
+        <button type="button" id="confirmCloseMonth">Confirm &amp; Start Next Month</button>
+        <button type="button" class="btn-secondary" onclick="closeModal('closeMonthModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(reg => console.log('SW registered:', reg.scope))
+        .catch(err => console.error('SW registration failed:', err));
+    }
+  </script>
+</body>
+</html>
