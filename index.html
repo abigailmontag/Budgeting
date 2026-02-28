@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Budget Tracker</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="styles.css">
+<meta name="theme-color" content="#8b5cf6">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<header class="top-bar">
+  <select id="monthSelect"></select>
+  <button id="newMonthBtn">+ Month</button>
+  <button id="themeToggle">🌙</button>
+</header>
+
+<section class="summary-card">
+  <div>
+    <label>Income</label>
+    <input type="number" id="incomeInput" />
+  </div>
+  <div>
+    <label>Available</label>
+    <span id="availableDisplay">$0</span>
+  </div>
+</section>
+
+<section id="categoriesContainer"></section>
+<button class="primary-btn" id="addCategoryBtn">+ Add Category</button>
+
+<section class="transfer-card">
+  <h3>Transfer Funds</h3>
+  <select id="transferFrom"></select>
+  <select id="transferTo"></select>
+  <input type="number" id="transferAmount" placeholder="Amount" />
+  <button id="transferBtn">Transfer</button>
+</section>
+
+<section class="charts">
+  <canvas id="surplusChart"></canvas>
+  <select id="trendCategorySelect"></select>
+  <canvas id="categoryTrendChart"></canvas>
+</section>
+
+<button class="primary-btn" id="closeMonthBtn">Close Month</button>
+<button class="primary-btn" onclick="exportCSV()">Export CSV</button>
+
+<!-- Bottom Slide-Up Modal for Close Month -->
+<div id="closeMonthModal" class="modal">
+  <div class="modal-content">
+    <h3>Resolve Rollovers</h3>
+    <div id="rolloverList"></div>
+    <button id="confirmCloseMonth">Confirm & Next Month</button>
+    <button onclick="closeModal()">Cancel</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
