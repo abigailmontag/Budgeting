@@ -33,11 +33,26 @@ function update(){
   saveData();
 }
 
+// -------------------- CATEGORY MANAGEMENT --------------------
+function addCategory(){
+  const cat = document.getElementById('newCategory').value.trim();
+  const goal = parseFloat(document.getElementById('newGoal').value);
+  if(!cat || !goal || goal <=0) return alert('Enter category name and valid goal');
+  
+  // Add or update category goal
+  data.categoryGoals[cat] = data.categoryGoals[cat] ? data.categoryGoals[cat]+goal : goal;
+  
+  document.getElementById('newCategory').value='';
+  document.getElementById('newGoal').value='';
+  saveData();
+  update();
+}
+
 // -------------------- CATEGORY DROPDOWN --------------------
 function updateCategoryDropdown(){
-  const select=document.getElementById('transferFrom');
+  const selectFrom=document.getElementById('transferFrom');
   const selectTo=document.getElementById('transferTo');
-  [select, selectTo].forEach(sel=>{
+  [selectFrom, selectTo].forEach(sel=>{
     sel.innerHTML = '';
     Object.keys(data.categoryGoals).forEach(cat=>{
       const option = document.createElement('option');
@@ -47,6 +62,8 @@ function updateCategoryDropdown(){
     });
   });
 }
+
+function updateTransferDropdowns(){ updateCategoryDropdown(); }
 
 // -------------------- TRANSFERS --------------------
 document.getElementById('transferBtn').onclick = ()=>{
@@ -60,7 +77,6 @@ document.getElementById('transferBtn').onclick = ()=>{
   const goalFrom = data.categoryGoals[from];
   if(amt>goalFrom-spentFrom) return alert('Not enough available in source category');
 
-  // Create a negative expense in source, positive in target
   const todayStr = new Date().toISOString().slice(0,10);
   data.transactions.push({amount:amt,note:`Transfer to ${to}`,type:'expense',category:from,date:todayStr});
   data.transactions.push({amount:amt,note:`Transfer from ${from}`,type:'income',category:to,date:todayStr});
@@ -141,7 +157,7 @@ function renderCategories(transactions){
     if(leftover > 0){
       const carryTile = document.createElement('div'); 
       carryTile.className='tile carry-tile';
-      carryTile.textContent = `surplus $${leftover.toFixed(2)} available`;
+      carryTile.textContent = `💰 $${leftover.toFixed(2)} available`;
       tiles.appendChild(carryTile);
     }
 
@@ -284,3 +300,6 @@ function renderCharts(){
     options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
   });
 }
+
+// -------------------- INITIAL RENDER --------------------
+update();
