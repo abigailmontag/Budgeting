@@ -1,230 +1,286 @@
-const STORAGE_KEY = "budgetProV3";
-let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {months:{}, currentMonth:null};
+// -------------------- INITIAL DATA --------------------
+let data = JSON.parse(localStorage.getItem('budgetData')) || {
+  transactions: [],
+  incomes: [],
+  categoryGoals: {},
+  lastMonth: new Date().toISOString().slice(0,7),
+  history: {}
+};
 
-function save(){localStorage.setItem(STORAGE_KEY, JSON.stringify(state));}
+const today = new Date();
+const currentMonth = today.toISOString().slice(0,7);
 
-// ----------------- Month Init -----------------
-function createMonth(key){
-  const prev = state.months[state.currentMonth];
-  const month = {incomeTransactions:[], categories:{}, transfers:[], closed:false, pool:0};
-  if(prev){
-    for(let name in prev.categories){
-      const c = prev.categories[name];
-      const delta = c.allocated - c.spent;
-      month.categories[name] = {base:c.base, rollover:delta, allocated:c.base+delta, spent:0};
-    }
-  }
-  state.months[key] = month; state.currentMonth = key; save();
-  renderMonthSelector(); render();
+// Auto reset month if needed
+if(data.lastMonth !== currentMonth){
+  data.history[data.lastMonth] = data.transactions;
+  data.transactions = [];
+  data.lastMonth = currentMonth;
+  saveData();
 }
 
-// ----------------- Income -----------------
-function addIncome(){
-  const amount = Number(document.getElementById("incomeAmount").value);
-  const date = document.getElementById("incomeDate").value || new Date().toISOString().slice(0,10);
-  const note = document.getElementById("incomeNote").value || "";
-  if(!amount || amount <= 0) return alert("Enter valid amount");
-  const month = state.months[state.currentMonth];
-  month.incomeTransactions.push({amount,date,note});
-  document.getElementById("incomeAmount").value="";
-  document.getElementById("incomeDate").value="";
-  document.getElementById("incomeNote").value="";
-  save(); render();
-}
-function removeIncome(idx){
-  const month = state.months[state.currentMonth];
-  month.incomeTransactions.splice(idx,1);
-  save(); render();
-}
-function totalIncome(month){
-  return month.incomeTransactions.reduce((sum,t)=>sum+t.amount,0);
+// -------------------- SAVE & UPDATE --------------------
+function saveData(){
+  localStorage.setItem('budgetData', JSON.stringify(data));
+  updateCategoryDropdown();
+  updateTransferDropdowns();
 }
 
-// ----------------- Available -----------------
-function available(month){
-  const totalAllocated = Object.values(month.categories).reduce((sum,c)=>sum+c.allocated,0);
-  return totalIncome(month) - totalAllocated + (month.pool||0);
-}
-
-// ----------------- Categories -----------------
-function addCategory(name,base){
-  const month = state.months[state.currentMonth];
-  if(available(month)<base) return alert("Exceeds available funds");
-  month.categories[name] = {base, rollover:0, allocated:base, spent:0};
-  save(); render();
-}
-function updateSpent(name,val){
-  state.months[state.currentMonth].categories[name].spent = Number(val);
-  save(); render();
-}
-function transferFunds(from,to,amt){
-  const month = state.months[state.currentMonth];
-  if(month.categories[from].allocated < amt) return alert("Insufficient funds");
-  month.categories[from].allocated -= amt; month.categories[to].allocated += amt;
-  month.transfers.push({from,to,amount:amt,date:Date.now()});
-  save(); render();
-}
-
-// ----------------- Rendering -----------------
-function renderMonthSelector(){
-  const sel=document.getElementById("monthSelect");
-  sel.innerHTML="";
-  Object.keys(state.months).sort().forEach(m=>{
-    const opt=document.createElement("option");
-    opt.value=m; opt.textContent=m;
-    if(m===state.currentMonth) opt.selected=true;
-    sel.appendChild(opt);
-  });
-}
-document.getElementById("monthSelect").onchange=e=>{state.currentMonth=e.target.value; render();}
-
-function render(){
-  const month = state.months[state.currentMonth];
-
-  // Income list
-  const incomeList = document.getElementById("incomeList"); incomeList.innerHTML="";
-  month.incomeTransactions.forEach((t,i)=>{
-    const li = document.createElement("li");
-    li.innerHTML = `${t.date} • $${t.amount.toFixed(2)} ${t.note? "• "+t.note : ""} <button onclick="removeIncome(${i})">🗑️</button>`;
-    incomeList.appendChild(li);
-  });
-
-  document.getElementById("availableDisplay").innerText = "$"+available(month);
-
-  // Categories container
-  const container=document.getElementById("categoriesContainer"); container.innerHTML="";
-  const transferFrom = document.getElementById("transferFrom"); const transferTo = document.getElementById("transferTo");
-  transferFrom.innerHTML=""; transferTo.innerHTML="";
-  Object.entries(month.categories).forEach(([name,c])=>{
-    const card = document.createElement("div"); card.className="category-card";
-    card.innerHTML = `<strong>${name}</strong> Allocated: $${c.allocated} Spent: <input type="number" value="${c.spent}" onchange="updateSpent('${name}',this.value)" /> Remaining: $${c.allocated-c.spent}`;
-    container.appendChild(card);
-    [transferFrom, transferTo].forEach(sel=>{
-      const opt = document.createElement("option"); opt.value=name; opt.textContent=name; sel.appendChild(opt);
-    });
-    enableSwipe(card,name);
-  });
-
+function update(){
+  renderIncome();
+  renderCategories(data.transactions);
   renderCharts();
-  populateTrendCategories();
+  updateBalance();
+  saveData();
 }
 
-// ----------------- Charts -----------------
-let categoryChart;
-function renderCharts(){
-  const monthKeys = Object.keys(state.months);
-  const surplusData = monthKeys.map(m=>available(state.months[m]));
-  new Chart(document.getElementById("surplusChart"),{type:"line",data:{labels:monthKeys,datasets:[{label:"Monthly Surplus",data:surplusData}]}});
-
-  const catSel = document.getElementById("trendCategorySelect");
-  const cat = catSel.value || Object.keys(state.months[state.currentMonth].categories)[0];
-  renderCategoryTrend(cat);
-}
-function populateTrendCategories(){
-  const sel = document.getElementById("trendCategorySelect");
-  const cats = Object.keys(state.months[state.currentMonth].categories);
-  sel.innerHTML=""; cats.forEach(c=>{const opt=document.createElement("option"); opt.value=c; opt.textContent=c; sel.appendChild(opt);});
-  sel.onchange = ()=>{renderCategoryTrend(sel.value)};
-}
-function renderCategoryTrend(catName){
-  const months = Object.keys(state.months);
-  const allocated = months.map(m=>state.months[m].categories[catName]?.allocated||0);
-  const spent = months.map(m=>state.months[m].categories[catName]?.spent||0);
-  if(categoryChart) categoryChart.destroy();
-  categoryChart = new Chart(document.getElementById("categoryTrendChart"),{type:"line",data:{labels:months,datasets:[{label:"Allocated",data:allocated},{label:"Spent",data:spent}]}})
-}
-
-// ----------------- Swipe Gestures -----------------
-function enableSwipe(card,catName){
-  let startX=0;
-  card.addEventListener("touchstart",e=>{startX=e.touches[0].clientX;});
-  card.addEventListener("touchend",e=>{
-    let deltaX = e.changedTouches[0].clientX - startX;
-    if(deltaX>80){quickAddSpending(catName);} else if(deltaX<-80){openTransferModal(catName);}
+// -------------------- CATEGORY DROPDOWN --------------------
+function updateCategoryDropdown(){
+  const select=document.getElementById('transferFrom');
+  const selectTo=document.getElementById('transferTo');
+  [select, selectTo].forEach(sel=>{
+    sel.innerHTML = '';
+    Object.keys(data.categoryGoals).forEach(cat=>{
+      const option = document.createElement('option');
+      option.value = cat;
+      option.textContent = cat;
+      sel.appendChild(option);
+    });
   });
 }
-function quickAddSpending(cat){
-  const val=Number(prompt(`Add spending to ${cat}`));
-  if(val){const m=state.months[state.currentMonth]; m.categories[cat].spent+=val; save(); render();}
-}
-function openTransferModal(catFrom){
-  const catTo = prompt("Move to category:");
-  const amt = Number(prompt("Amount:"));
-  if(catTo && amt) transferFunds(catFrom,catTo,amt);
+
+// -------------------- TRANSFERS --------------------
+document.getElementById('transferBtn').onclick = ()=>{
+  const from = document.getElementById('transferFrom').value;
+  const to = document.getElementById('transferTo').value;
+  const amt = parseFloat(document.getElementById('transferAmount').value);
+  if(!from || !to || from===to || isNaN(amt) || amt<=0) return alert('Invalid transfer');
+  
+  const spentFrom = data.transactions.filter(t=>t.category===from && t.type==='expense')
+                     .reduce((s,t)=>s+t.amount,0);
+  const goalFrom = data.categoryGoals[from];
+  if(amt>goalFrom-spentFrom) return alert('Not enough available in source category');
+
+  // Create a negative expense in source, positive in target
+  const todayStr = new Date().toISOString().slice(0,10);
+  data.transactions.push({amount:amt,note:`Transfer to ${to}`,type:'expense',category:from,date:todayStr});
+  data.transactions.push({amount:amt,note:`Transfer from ${from}`,type:'income',category:to,date:todayStr});
+  document.getElementById('transferAmount').value='';
+  update();
+};
+
+// -------------------- INCOME --------------------
+function addIncome(){
+  const amt = parseFloat(document.getElementById('incomeAmount').value);
+  const note = document.getElementById('incomeNote').value.trim();
+  const date = document.getElementById('incomeDate').value || new Date().toISOString().slice(0,10);
+  if(!amt || !note) return alert('Enter amount and description');
+  data.incomes.push({amount:amt,note:note,date:date});
+  document.getElementById('incomeAmount').value='';
+  document.getElementById('incomeNote').value='';
+  document.getElementById('incomeDate').value='';
+  update();
 }
 
-// ----------------- Buttons -----------------
-document.getElementById("newMonthBtn").onclick = ()=>{
-  const key = prompt("Month (YYYY-MM)");
-  if(key) createMonth(key);
-}
-document.getElementById("addCategoryBtn").onclick = ()=>{
-  const name=prompt("Category name"); const base=Number(prompt("Base budget")); if(name && base) addCategory(name,base);
-}
-document.getElementById("transferBtn").onclick = ()=>{
-  const from = document.getElementById("transferFrom").value;
-  const to = document.getElementById("transferTo").value;
-  const amt = Number(document.getElementById("transferAmount").value);
-  transferFunds(from,to,amt);
+function renderIncome(){
+  const ul = document.getElementById('incomeList');
+  ul.innerHTML='';
+  let totalIncome=0;
+  data.incomes.forEach((inc,i)=>{
+    const li = document.createElement('li');
+    li.textContent=`${inc.note}: $${inc.amount} • ${inc.date}`;
+    ul.appendChild(li);
+    totalIncome+=inc.amount;
+  });
+  document.getElementById('availableDisplay').textContent='$'+(totalIncome-calcTotalExpenses()).toFixed(2);
 }
 
-// ----------------- Export CSV -----------------
-function exportCSV(){
-  let rows=[["Month","Category","Allocated","Spent","Rollover"]];
-  for(let m in state.months){
-    for(let c in state.months[m].categories){
-      const cat = state.months[m].categories[c];
-      rows.push([m,c,cat.allocated,cat.spent,cat.rollover||0]);
+// -------------------- CALCULATIONS --------------------
+function calcTotalExpenses(){
+  return data.transactions.filter(t=>t.type==='expense')
+             .reduce((s,t)=>s+t.amount,0);
+}
+
+function updateBalance(){
+  const totalIncome = data.incomes.reduce((s,i)=>s+i.amount,0);
+  const totalExp = calcTotalExpenses();
+  document.getElementById('balance').textContent='Balance: $'+(totalIncome-totalExp).toFixed(2);
+}
+
+// -------------------- RENDER CATEGORIES & TILES --------------------
+function renderCategories(transactions){
+  const container = document.getElementById('categoriesContainer');
+  container.innerHTML = '';
+
+  for(const cat of Object.keys(data.categoryGoals)){
+    const card = document.createElement('div'); 
+    card.className='category-card';
+
+    const h4 = document.createElement('h4'); 
+    h4.textContent = cat;
+    card.appendChild(h4);
+
+    // Progress bar
+    const spent = transactions
+        .filter(t=>t.category===cat && t.type==='expense')
+        .reduce((s,t)=>s+t.amount,0);
+    const goal = data.categoryGoals[cat];
+    const pct = Math.min((spent/goal)*100,100);
+    const progress = document.createElement('div'); 
+    progress.className='progress-bar';
+    progress.innerHTML = `<div class="progress-fill" style="width:${pct}%"></div>
+                          <span>Spent: $${spent.toFixed(2)}/$${goal.toFixed(2)}</span>`;
+    card.appendChild(progress);
+
+    // Tiles container
+    const tiles = document.createElement('div'); 
+    tiles.className='tiles-container';
+    tiles.id=`tiles-${cat}`;
+
+    // Carry-forward tile
+    const leftover = goal - spent;
+    if(leftover > 0){
+      const carryTile = document.createElement('div'); 
+      carryTile.className='tile carry-tile';
+      carryTile.textContent = `surplus $${leftover.toFixed(2)} available`;
+      tiles.appendChild(carryTile);
     }
+
+    // "+" tile
+    const addTile = document.createElement('div'); 
+    addTile.className='tile add-tile'; 
+    addTile.textContent='+';
+    addTile.onclick = ()=>promptAddTransaction(cat);
+    tiles.appendChild(addTile);
+
+    // Existing transactions
+    transactions
+        .filter(t=>t.category===cat)
+        .forEach(t=>{
+          const tile = document.createElement('div'); 
+          tile.className='tile';
+          const date = new Date(t.date);
+          const dateStr = `${date.toLocaleString('default',{month:'short'})} ${date.getDate()}`;
+          tile.textContent = `${t.note} $${t.amount} • ${dateStr}`;
+          tiles.appendChild(tile);
+        });
+
+    card.appendChild(tiles);
+    container.appendChild(card);
   }
-  const blob = new Blob([rows.map(r=>r.join(",")).join("\n")],{type:"text/csv"});
-  const url = URL.createObjectURL(blob);
-  const a=document.createElement("a"); a.href=url; a.download="budget.csv"; a.click();
 }
 
-// ----------------- Dark Mode -----------------
-document.getElementById("themeToggle").onclick = ()=>{
-  document.body.classList.toggle("dark");
+// -------------------- PROMPT ADD TRANSACTION --------------------
+function promptAddTransaction(category){
+  const note = prompt(`Transaction description for ${category}`);
+  const amt = parseFloat(prompt(`Amount for ${category}`));
+  if(!note || !amt || amt<=0) return;
+  const date = new Date().toISOString().slice(0,10);
+  data.transactions.push({amount:amt,note:note,type:'expense',category:category,date:date});
+  update();
 }
 
-// ----------------- Close Month Modal -----------------
-const modal = document.getElementById("closeMonthModal");
-function closeModal(){modal.style.display="none";}
-document.getElementById("closeMonthBtn").onclick = ()=>{ showCloseMonthModal(); }
+// -------------------- CLOSE MONTH --------------------
+document.getElementById('closeMonthBtn').onclick = openCloseMonthModal;
 
-function showCloseMonthModal(){
-  const month = state.months[state.currentMonth];
-  if(month.closed){alert("Month already closed"); return;}
-  const container = document.getElementById("rolloverList");
-  container.innerHTML="";
-  for(let cat in month.categories){
-    const c = month.categories[cat]; const delta=c.allocated - c.spent;
-    const div=document.createElement("div");
-    div.innerHTML = `<strong>${cat}</strong> Surplus/Deficit: $${delta} <select id="action_${cat}">
-      <option value="keep">Keep</option>
-      <option value="pool">Pool</option>
-      <option value="move">Move</option>
-    </select>
-    ${delta<0 ? "<em>Deficit will carry forward</em>":""}`;
-    container.appendChild(div);
+function openCloseMonthModal() {
+  const modal = document.getElementById('closeMonthModal');
+  const list = document.getElementById('rolloverList');
+  list.innerHTML = '';
+  const filtered = data.transactions;
+
+  for(const cat in data.categoryGoals){
+    const spent = filtered.filter(t=>t.category===cat && t.type==='expense')
+                         .reduce((s,t)=>s+t.amount,0);
+    const goal = data.categoryGoals[cat];
+    const leftover = goal - spent;
+    if(leftover<=0) continue;
+
+    const div = document.createElement('div');
+    div.style.marginBottom='12px';
+    div.innerHTML = `
+      <label>${cat}: $${leftover.toFixed(2)} leftover</label>
+      <select data-cat="${cat}">
+        <option value="carry">Carry forward to same category</option>
+        <option value="redistribute">Redistribute</option>
+        <option value="none">Ignore</option>
+      </select>
+    `;
+    list.appendChild(div);
   }
-  modal.style.display="block";
-}
-document.getElementById("confirmCloseMonth").onclick = ()=>{
-  const month = state.months[state.currentMonth]; const resolved={}; let pooled=0;
-  for(let cat in month.categories){
-    const select = document.getElementById(`action_${cat}`);
-    const action = select.value;
-    const delta = month.categories[cat].allocated - month.categories[cat].spent;
-    if(action==="pool"){pooled+=delta; resolved[cat]=0;} else{resolved[cat]=delta;}
-  }
-  month.pool = pooled; month.closed=true;
-  const now = new Date(); const nextMonthKey = new Date(now.getFullYear(), now.getMonth()+1,1).toISOString().slice(0,7);
-  createMonth(nextMonthKey);
-  for(let c in state.months[nextMonthKey].categories){state.months[nextMonthKey].categories[c].rollover = resolved[c]||0;}
-  save(); closeModal(); render();
+
+  modal.style.display='flex';
 }
 
-// ----------------- Init -----------------
-if(!state.currentMonth){ const now = new Date(); createMonth(now.toISOString().slice(0,7)); }
-render(); renderMonthSelector();
+function closeModal() {
+  document.getElementById('closeMonthModal').style.display='none';
+}
+
+document.getElementById('confirmCloseMonth').onclick = () => {
+  const selects = document.querySelectorAll('#rolloverList select');
+  selects.forEach(sel=>{
+    const cat = sel.dataset.cat;
+    const choice = sel.value;
+    const filtered = data.transactions;
+    const spent = filtered.filter(t=>t.category===cat && t.type==='expense')
+                         .reduce((s,t)=>s+t.amount,0);
+    const leftover = data.categoryGoals[cat] - spent;
+    if(leftover <= 0) return;
+    
+    if(choice==='carry'){
+      data.categoryGoals[cat] += leftover;
+    }
+    else if(choice==='redistribute'){
+      const otherCats = Object.keys(data.categoryGoals).filter(c=>c!==cat);
+      const perCat = leftover / otherCats.length;
+      otherCats.forEach(c=>data.categoryGoals[c] += perCat);
+    }
+  });
+
+  const lastMonth = data.lastMonth;
+  data.history[lastMonth] = data.transactions;
+  data.transactions = [];
+  data.lastMonth = new Date().toISOString().slice(0,7);
+  saveData();
+  closeModal();
+  update();
+};
+
+// -------------------- CSV EXPORT --------------------
+function exportCSV(){
+  const rows = [['Type','Category','Amount','Note','Date']];
+  data.transactions.forEach(t=>{
+    rows.push([t.type,t.category,t.amount,t.note,t.date]);
+  });
+  data.incomes.forEach(i=>{
+    rows.push(['income',i.note,i.amount,'',i.date]);
+  });
+  let csvContent = "data:text/csv;charset=utf-8," 
+      + rows.map(e=>e.join(",")).join("\n");
+  const encoded = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encoded);
+  link.setAttribute('download', "budget_export.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// -------------------- CHARTS --------------------
+let surplusChart;
+
+function renderCharts(){
+  const ctx = document.getElementById('surplusChart').getContext('2d');
+  const totalIncome = data.incomes.reduce((s,i)=>s+i.amount,0);
+  const totalExp = calcTotalExpenses();
+  const available = totalIncome - totalExp;
+
+  if(surplusChart) surplusChart.destroy();
+  surplusChart = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:['Available'],
+      datasets:[{label:'$',data:[available],backgroundColor:'#f472b6'}]
+    },
+    options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
+  });
+}
