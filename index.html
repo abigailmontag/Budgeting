@@ -7,14 +7,16 @@
 <link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="styles.css">
 <meta name="theme-color" content="#8b5cf6">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
 
+<!-- iOS support -->
 <link rel="apple-touch-icon" href="icon-512.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Budget Tracker">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
 
 <header class="top-bar">
   <select id="monthSelect"></select>
@@ -59,7 +61,6 @@
 <button class="primary-btn" id="closeMonthBtn">Close Month</button>
 <button class="primary-btn" onclick="exportCSV()">Export CSV</button>
 
-<!-- Bottom Slide-Up Modal for Close Month -->
 <div id="closeMonthModal" class="modal">
   <div class="modal-content">
     <h3>Resolve Rollovers</h3>
