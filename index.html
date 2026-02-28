@@ -30,20 +30,14 @@
   <button type="button" onclick="addIncome()">Add Income</button>
   <ul id="incomeList"></ul>
 
-  <!-- Manage Categories -->
-  <h3>Manage Categories</h3>
-  <input type="text" id="newCategory" placeholder="Category Name">
-  <input type="number" id="newGoal" placeholder="Monthly Goal">
-  <button type="button" onclick="addCategory()">Add / Update Category</button>
-
-  <!-- Transfer Between Categories -->
+  <!-- Transfers Between Categories -->
   <h3>Transfer Between Categories</h3>
   <select id="transferFrom"></select>
   <select id="transferTo"></select>
   <input type="number" id="transferAmount" placeholder="Amount">
   <button id="transferBtn">Transfer</button>
 
-  <!-- Categories Section -->
+  <!-- Categories -->
   <h3>Categories</h3>
   <div id="categoriesContainer"></div>
 
@@ -52,7 +46,7 @@
   <canvas id="surplusChart" height="180"></canvas>
   <div>Available: <span id="availableDisplay">$0</span></div>
 
-  <!-- Export -->
+  <!-- Export CSV -->
   <button onclick="exportCSV()">Export CSV</button>
 
   <!-- Close Month -->
