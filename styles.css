@@ -16,36 +16,21 @@ body {
   font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
   color: #fff;
   min-height: 100vh;
-  min-height: -webkit-fill-available; /* fix iOS 100vh bug */
+  min-height: -webkit-fill-available;
   display: flex;
   flex-direction: column;
   align-items: center;
   background: linear-gradient(160deg, #3b82f6 0%, #8b5cf6 40%, #f472b6 75%, #fb923c 100%);
-  animation: bgShift 15s infinite alternate;
   overflow-x: hidden;
-  /* Respect iPhone notch & home bar */
   padding-bottom: max(2rem, env(safe-area-inset-bottom));
   padding-left:  env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
-}
-
-@keyframes bgShift {
-  0%   { background: linear-gradient(160deg, #3b82f6, #8b5cf6, #f472b6, #fb923c); }
-  50%  { background: linear-gradient(160deg, #8b5cf6, #f472b6, #fb923c, #3b82f6); }
-  100% { background: linear-gradient(160deg, #3b82f6, #8b5cf6, #f472b6, #fb923c); }
-}
-
-/* Respect reduced-motion preferences */
-@media (prefers-reduced-motion: reduce) {
-  body { animation: none; }
-  * { transition: none !important; }
 }
 
 /* ── HEADER ── */
 header {
   text-align: center;
   padding: 1.5rem 1rem 0.5rem;
-  /* Push down past the iPhone notch/Dynamic Island when installed as PWA */
   padding-top: max(1.5rem, env(safe-area-inset-top));
   width: 100%;
 }
@@ -106,7 +91,6 @@ h1 {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-/* Side-by-side form row (category name + goal) */
 .form-row {
   display: flex;
   gap: 0.5rem;
@@ -114,7 +98,7 @@ h1 {
 
 .form-row .form-group {
   flex: 1;
-  min-width: 0; /* prevent overflow */
+  min-width: 0;
 }
 
 /* ── INPUTS & SELECTS ── */
@@ -124,7 +108,7 @@ select {
   padding: 0.65rem 0.75rem;
   border: none;
   border-radius: 0.6rem;
-  font-size: 16px; /* prevents iOS zoom-on-focus */
+  font-size: 16px;
   background: rgba(255, 255, 255, 0.25);
   color: #fff;
   appearance: none;
@@ -142,7 +126,6 @@ select:focus {
   background: rgba(255, 255, 255, 0.3);
 }
 
-/* Style date inputs on iOS */
 input[type="date"] {
   color-scheme: dark;
 }
@@ -188,7 +171,6 @@ button.btn-secondary:hover {
   background: rgba(255, 255, 255, 0.25);
 }
 
-/* Actions row — two buttons side by side */
 .actions-row {
   display: flex;
   gap: 0.5rem;
@@ -235,7 +217,6 @@ button.btn-secondary:hover {
   flex-shrink: 0;
 }
 
-/* Empty state */
 .empty-state {
   text-align: center;
   opacity: 0.55;
@@ -263,13 +244,26 @@ button.btn-secondary:hover {
   font-weight: 700;
 }
 
-.category-card .delete-cat-btn {
+.category-card-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.category-card .delete-cat-btn,
+.category-card .edit-cat-btn {
   width: auto;
   padding: 0.15rem 0.5rem;
   margin: 0;
   font-size: 0.7rem;
-  background: rgba(255, 100, 100, 0.3);
   border-radius: 0.3rem;
+}
+
+.category-card .delete-cat-btn {
+  background: rgba(255, 100, 100, 0.3);
+}
+
+.category-card .edit-cat-btn {
+  background: rgba(139, 92, 246, 0.4);
 }
 
 /* ── PROGRESS BARS ── */
@@ -392,7 +386,7 @@ canvas {
   inset: 0;
   background: rgba(0, 0, 0, 0.65);
   display: flex;
-  align-items: flex-end; /* slides up from bottom on mobile */
+  align-items: flex-end;
   justify-content: center;
   z-index: 200;
   padding: 0 0.75rem;
